@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SpeechToText } from '../SpeechRecognition/SpeechToText';
 import { AlertCircle, Mic } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,12 +14,14 @@ export const LiveTranscript = ({ isActive, onTranscriptUpdate }: LiveTranscriptP
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (transcript) {
+      onTranscriptUpdate(transcript.trim());
+    }
+  }, [transcript, onTranscriptUpdate]);
+
   const handleTranscriptUpdate = (newTranscript: string) => {
-    setTranscript(prev => {
-      const updated = prev + ' ' + newTranscript;
-      onTranscriptUpdate(updated.trim());
-      return updated;
-    });
+    setTranscript(prev => prev + ' ' + newTranscript);
   };
 
   const handleError = (errorMessage: string) => {
