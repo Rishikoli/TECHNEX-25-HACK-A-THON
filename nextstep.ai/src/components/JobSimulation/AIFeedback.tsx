@@ -1,118 +1,270 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Brain, ThumbsUp, ThumbsDown, AlertTriangle } from 'lucide-react';
-
-interface FeedbackPoint {
-  type: 'positive' | 'negative' | 'suggestion';
-  text: string;
-}
+import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Brain, Activity, MessageSquare, Volume2, AlertCircle, ThumbsUp, Zap } from 'lucide-react';
 
 interface AIFeedbackProps {
   transcript: string;
-  videoBlob?: Blob;
-  isAnalyzing?: boolean;
+  isAnalyzing: boolean;
+  emotion?: string;
 }
 
-export const AIFeedback = ({ transcript, videoBlob, isAnalyzing }: AIFeedbackProps) => {
-  const [feedback, setFeedback] = useState<FeedbackPoint[]>([]);
+interface FeedbackMetrics {
+  answerQuality: number;
+  speakingPace: number;
+  bodyLanguage: number;
+  confidence: number;
+}
+
+interface Tip {
+  id: number;
+  type: 'improvement' | 'positive';
+  message: string;
+  category: 'answer' | 'pace' | 'body' | 'confidence';
+}
+
+export const AIFeedback = ({ transcript, isAnalyzing, emotion = 'neutral' }: AIFeedbackProps) => {
+  const [metrics, setMetrics] = useState<FeedbackMetrics>({
+    answerQuality: 0,
+    speakingPace: 0,
+    bodyLanguage: 0,
+    confidence: 0,
+  });
+
+  const [tips, setTips] = useState<Tip[]>([]);
+  const [wordCount, setWordCount] = useState(0);
+  const [wordsPerMinute, setWordsPerMinute] = useState(0);
+  const [startTime, setStartTime] = useState<number | null>(null);
 
   useEffect(() => {
-    if (transcript && !isAnalyzing) {
-      analyzeFeedback();
+    if (transcript && !startTime) {
+      setStartTime(Date.now());
     }
-  }, [transcript, isAnalyzing]);
+  }, [transcript]);
 
-  const analyzeFeedback = async () => {
-    // This would typically call your AI service
-    // For now, we'll simulate feedback based on simple analysis
-    const feedbackPoints: FeedbackPoint[] = [];
+  useEffect(() => {
+    if (transcript) {
+      const words = transcript.trim().split(/\s+/).length;
+      setWordCount(words);
 
-    // Example analysis based on transcript
-    if (transcript.toLowerCase().includes('um') || transcript.toLowerCase().includes('uh')) {
-      feedbackPoints.push({
-        type: 'negative',
-        text: 'Try to reduce filler words like "um" and "uh"'
-      });
+      if (startTime) {
+        const minutes = (Date.now() - startTime) / 60000;
+        const wpm = Math.round(words / minutes);
+        setWordsPerMinute(wpm);
+
+        // Update speaking pace metric
+        const optimalWPM = 150; // Ideal speaking pace
+        const paceScore = Math.max(0, Math.min(1, 1 - Math.abs(wpm - optimalWPM) / optimalWPM));
+        
+        // Update metrics based on various factors
+        setMetrics(prev => ({
+          ...prev,
+          speakingPace: paceScore,
+          answerQuality: calculateAnswerQuality(transcript),
+          bodyLanguage: calculateBodyLanguageScore(emotion),
+          confidence: calculateConfidenceScore(emotion, wpm)
+        }));
+
+        // Generate real-time tips
+        generateTips(transcript, wpm, emotion);
+      }
     }
+  }, [transcript, emotion]);
 
-    if (transcript.split(' ').length > 50) {
-      feedbackPoints.push({
-        type: 'positive',
-        text: 'Good detailed response with sufficient elaboration'
-      });
-    }
-
-    if (transcript.toLowerCase().includes('example') || transcript.toLowerCase().includes('instance')) {
-      feedbackPoints.push({
-        type: 'positive',
-        text: 'Excellent use of specific examples to support your points'
-      });
-    }
-
-    feedbackPoints.push({
-      type: 'suggestion',
-      text: 'Consider incorporating more quantifiable achievements in your responses'
-    });
-
-    setFeedback(feedbackPoints);
+  const calculateAnswerQuality = (text: string): number => {
+    // Simple metrics for answer quality
+    const words = text.toLowerCase().split(/\s+/);
+    const uniqueWords = new Set(words).size;
+    const wordVariety = uniqueWords / words.length;
+    
+    // Check for filler words
+    const fillerWords = ['um', 'uh', 'like', 'you know', 'sort of'];
+    const fillerCount = fillerWords.reduce((count, filler) => 
+      count + (text.toLowerCase().match(new RegExp(filler, 'g')) || []).length, 0);
+    
+    const fillerPenalty = Math.max(0, 1 - (fillerCount / words.length) * 5);
+    
+    return Math.min(1, (wordVariety + fillerPenalty) / 2);
   };
 
-  const getFeedbackIcon = (type: FeedbackPoint['type']) => {
-    switch (type) {
-      case 'positive':
-        return <ThumbsUp className="w-5 h-5 text-green-500" />;
-      case 'negative':
-        return <ThumbsDown className="w-5 h-5 text-red-500" />;
-      case 'suggestion':
-        return <AlertTriangle className="w-5 h-5 text-yellow-500" />;
+  const calculateBodyLanguageScore = (emotion: string): number => {
+    const positiveEmotions = ['happy', 'neutral', 'surprised'];
+    const negativeEmotions = ['angry', 'sad', 'fearful', 'disgusted'];
+    
+    if (positiveEmotions.includes(emotion)) {
+      return 0.8;
+    } else if (negativeEmotions.includes(emotion)) {
+      return 0.4;
     }
+    return 0.6;
+  };
+
+  const calculateConfidenceScore = (emotion: string, wpm: number): number => {
+    const emotionScore = emotion === 'neutral' || emotion === 'happy' ? 0.8 : 0.5;
+    const paceScore = wpm > 120 && wpm < 180 ? 0.8 : 0.5;
+    return (emotionScore + paceScore) / 2;
+  };
+
+  const generateTips = (text: string, wpm: number, emotion: string) => {
+    const newTips: Tip[] = [];
+
+    // Speaking pace tips
+    if (wpm < 120) {
+      newTips.push({
+        id: Date.now(),
+        type: 'improvement',
+        message: 'Try speaking a bit faster to maintain engagement',
+        category: 'pace'
+      });
+    } else if (wpm > 180) {
+      newTips.push({
+        id: Date.now() + 1,
+        type: 'improvement',
+        message: 'Slow down slightly to improve clarity',
+        category: 'pace'
+      });
+    } else {
+      newTips.push({
+        id: Date.now() + 2,
+        type: 'positive',
+        message: 'Great speaking pace!',
+        category: 'pace'
+      });
+    }
+
+    // Answer quality tips
+    if (text.toLowerCase().includes('um') || text.toLowerCase().includes('uh')) {
+      newTips.push({
+        id: Date.now() + 3,
+        type: 'improvement',
+        message: 'Try to reduce filler words like "um" and "uh"',
+        category: 'answer'
+      });
+    }
+
+    // Body language tips based on emotion
+    if (emotion === 'neutral' || emotion === 'happy') {
+      newTips.push({
+        id: Date.now() + 4,
+        type: 'positive',
+        message: 'Your facial expressions show good engagement',
+        category: 'body'
+      });
+    } else {
+      newTips.push({
+        id: Date.now() + 5,
+        type: 'improvement',
+        message: 'Try to maintain a more positive facial expression',
+        category: 'body'
+      });
+    }
+
+    setTips(prev => [...prev.slice(-4), ...newTips]);
   };
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold">AI Feedback</h3>
-        {isAnalyzing ? (
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-          >
-            <Brain className="w-5 h-5 text-blue-600" />
-          </motion.div>
-        ) : null}
+      <h3 className="text-lg font-semibold mb-4">Real-time Analysis</h3>
+      
+      {/* Metrics Grid */}
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="bg-blue-50 rounded-lg p-3">
+          <div className="flex items-center text-blue-600 mb-2">
+            <Brain className="w-4 h-4 mr-2" />
+            Answer Quality
+          </div>
+          <div className="h-2 bg-blue-100 rounded-full">
+            <motion.div
+              className="h-full bg-blue-600 rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${metrics.answerQuality * 100}%` }}
+              transition={{ duration: 0.5 }}
+            />
+          </div>
+        </div>
+
+        <div className="bg-green-50 rounded-lg p-3">
+          <div className="flex items-center text-green-600 mb-2">
+            <Volume2 className="w-4 h-4 mr-2" />
+            Speaking Pace
+          </div>
+          <div className="h-2 bg-green-100 rounded-full">
+            <motion.div
+              className="h-full bg-green-600 rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${metrics.speakingPace * 100}%` }}
+              transition={{ duration: 0.5 }}
+            />
+          </div>
+          <div className="text-sm text-green-600 mt-1">
+            {wordsPerMinute} words/min
+          </div>
+        </div>
+
+        <div className="bg-purple-50 rounded-lg p-3">
+          <div className="flex items-center text-purple-600 mb-2">
+            <Activity className="w-4 h-4 mr-2" />
+            Body Language
+          </div>
+          <div className="h-2 bg-purple-100 rounded-full">
+            <motion.div
+              className="h-full bg-purple-600 rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${metrics.bodyLanguage * 100}%` }}
+              transition={{ duration: 0.5 }}
+            />
+          </div>
+        </div>
+
+        <div className="bg-orange-50 rounded-lg p-3">
+          <div className="flex items-center text-orange-600 mb-2">
+            <MessageSquare className="w-4 h-4 mr-2" />
+            Confidence
+          </div>
+          <div className="h-2 bg-orange-100 rounded-full">
+            <motion.div
+              className="h-full bg-orange-600 rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${metrics.confidence * 100}%` }}
+              transition={{ duration: 0.5 }}
+            />
+          </div>
+        </div>
       </div>
 
-      {feedback.length > 0 ? (
-        <div className="space-y-4">
-          {feedback.map((point, index) => (
+      {/* Real-time Tips */}
+      <div className="space-y-2">
+        <h4 className="text-sm font-semibold text-gray-600 mb-2">Real-time Tips</h4>
+        <AnimatePresence mode="popLayout">
+          {tips.map((tip) => (
             <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 10 }}
+              key={tip.id}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className={`flex items-start space-x-3 p-3 rounded ${
-                point.type === 'positive' ? 'bg-green-50' :
-                point.type === 'negative' ? 'bg-red-50' : 'bg-yellow-50'
+              exit={{ opacity: 0, x: -20 }}
+              className={`flex items-start space-x-2 p-2 rounded ${
+                tip.type === 'improvement' 
+                  ? 'bg-amber-50 text-amber-700'
+                  : 'bg-green-50 text-green-700'
               }`}
             >
-              {getFeedbackIcon(point.type)}
-              <p className={`text-sm ${
-                point.type === 'positive' ? 'text-green-700' :
-                point.type === 'negative' ? 'text-red-700' : 'text-yellow-700'
-              }`}>
-                {point.text}
-              </p>
+              {tip.type === 'improvement' ? (
+                <AlertCircle className="w-4 h-4 mt-0.5" />
+              ) : (
+                <ThumbsUp className="w-4 h-4 mt-0.5" />
+              )}
+              <span className="text-sm">{tip.message}</span>
             </motion.div>
           ))}
-        </div>
-      ) : (
-        <div className="text-center py-8">
-          <Brain className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-          <p className="text-gray-500">
-            {isAnalyzing ? 'Analyzing your response...' : 'Waiting for your response...'}
-          </p>
+        </AnimatePresence>
+      </div>
+
+      {/* Loading State */}
+      {isAnalyzing && (
+        <div className="flex items-center justify-center py-4">
+          <Zap className="w-5 h-5 text-blue-600 animate-pulse mr-2" />
+          <span className="text-blue-600">Analyzing response...</span>
         </div>
       )}
     </div>

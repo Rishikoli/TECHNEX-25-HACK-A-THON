@@ -1,87 +1,77 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { Mic, MicOff } from 'lucide-react';
+import { useState } from 'react';
+import { SpeechToText } from '../SpeechRecognition/SpeechToText';
+import { AlertCircle, Mic } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface LiveTranscriptProps {
   isActive: boolean;
-  onTranscriptUpdate?: (transcript: string) => void;
+  onTranscriptUpdate: (transcript: string) => void;
 }
 
 export const LiveTranscript = ({ isActive, onTranscriptUpdate }: LiveTranscriptProps) => {
   const [transcript, setTranscript] = useState('');
-  const [isListening, setIsListening] = useState(false);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        recognitionRef.current = new SpeechRecognition();
-        recognitionRef.current.continuous = true;
-        recognitionRef.current.interimResults = true;
+  const handleTranscriptUpdate = (newTranscript: string) => {
+    setTranscript(prev => {
+      const updated = prev + ' ' + newTranscript;
+      onTranscriptUpdate(updated.trim());
+      return updated;
+    });
+  };
 
-        recognitionRef.current.onresult = (event) => {
-          let currentTranscript = '';
-          for (let i = 0; i < event.results.length; i++) {
-            currentTranscript += event.results[i][0].transcript;
-          }
-          setTranscript(currentTranscript);
-          if (onTranscriptUpdate) {
-            onTranscriptUpdate(currentTranscript);
-          }
-        };
-
-        recognitionRef.current.onerror = (event) => {
-          console.error('Speech recognition error:', event.error);
-          setIsListening(false);
-        };
-      }
-    }
-
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-    };
-  }, [onTranscriptUpdate]);
-
-  useEffect(() => {
-    if (isActive && !isListening && recognitionRef.current) {
-      recognitionRef.current.start();
-      setIsListening(true);
-    } else if (!isActive && isListening && recognitionRef.current) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    }
-  }, [isActive, isListening]);
+  const handleError = (errorMessage: string) => {
+    setError(errorMessage);
+    // Clear error after 5 seconds
+    setTimeout(() => setError(null), 5000);
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-4">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold">Live Transcript</h3>
-        <div className="flex items-center space-x-2">
-          {isListening ? (
+        <div className="flex items-center">
+          <motion.div
+            animate={{ scale: isActive ? [1, 1.2, 1] : 1 }}
+            transition={{ repeat: isActive ? Infinity : 0, duration: 1.5 }}
+          >
+            <Mic className={`w-5 h-5 ${isActive ? 'text-red-500' : 'text-gray-400'}`} />
+          </motion.div>
+          {isActive && <span className="ml-2 text-sm text-gray-500">Recording...</span>}
+        </div>
+      </div>
+
+      <div className="relative">
+        <AnimatePresence>
+          {error && (
             <motion.div
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ repeat: Infinity, duration: 1.5 }}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="absolute top-0 left-0 right-0 bg-red-50 text-red-600 p-3 rounded-lg mb-3 flex items-center"
             >
-              <Mic className="w-5 h-5 text-blue-600" />
+              <AlertCircle className="w-4 h-4 mr-2" />
+              {error}
             </motion.div>
-          ) : (
-            <MicOff className="w-5 h-5 text-gray-400" />
+          )}
+        </AnimatePresence>
+
+        <div className={`min-h-[100px] max-h-[200px] overflow-y-auto p-3 rounded-lg bg-gray-50 ${error ? 'mt-16' : ''}`}>
+          {transcript || (
+            <span className="text-gray-400">
+              {isActive ? 'Listening... Start speaking' : 'Click "Start Recording" to begin'}
+            </span>
           )}
         </div>
       </div>
-      
-      <div className="h-48 overflow-y-auto bg-gray-50 rounded p-3">
-        {transcript ? (
-          <p className="text-gray-700 whitespace-pre-wrap">{transcript}</p>
-        ) : (
-          <p className="text-gray-400 italic">Start speaking to see the transcript...</p>
-        )}
-      </div>
+
+      <SpeechToText
+        isActive={isActive}
+        onTranscriptUpdate={handleTranscriptUpdate}
+        onError={handleError}
+      />
     </div>
   );
 };
