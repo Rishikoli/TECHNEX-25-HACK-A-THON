@@ -3,6 +3,9 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowRight, LineChart, BookOpen, Globe } from 'lucide-react';
+import FloatingBoxesAnimation from '@/components/FloatingBoxesAnimation';
+import SolutionsAnimation from '@/components/SolutionsAnimation';
+import HeroWaveAnimation from '@/components/HeroWaveAnimation';
 
 export default function SolutionsPage() {
   const solutions = [
@@ -33,61 +36,47 @@ export default function SolutionsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-neutral-50 py-20">
+    <div className="min-h-screen bg-neutral-50">
       {/* Hero Section */}
-      <section className="container mx-auto px-4 mb-20">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center max-w-3xl mx-auto"
-        >
-          <h1 className="text-4xl md:text-5xl font-bold text-neutral-900 mb-6">
-            Career Growth Solutions
-          </h1>
-          <p className="text-xl text-neutral-600 mb-8">
-            Unlock your career potential with our comprehensive solutions designed to help you navigate the modern job market.
-          </p>
-        </motion.div>
+      <section className="relative overflow-hidden">
+        <FloatingBoxesAnimation />
+        <div className="container mx-auto px-4 relative z-10 py-20">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center max-w-3xl mx-auto"
+          >
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
+              Career Growth Solutions
+            </h1>
+            <p className="text-xl text-white/90 mb-8">
+              Unlock your career potential with our comprehensive solutions designed to help you navigate the modern job market.
+            </p>
+          </motion.div>
+        </div>
       </section>
 
       {/* Solutions Grid */}
       <section className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
           {solutions.map((solution, index) => (
             <motion.div
-              key={solution.href}
+              key={solution.title}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
+              className="bg-white/10 backdrop-blur-lg rounded-lg p-6 hover:bg-white/20 transition-colors"
             >
-              <Link href={solution.href}>
-                <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 h-full">
-                  <div className="space-y-4">
-                    <div className={`p-3 inline-flex rounded-lg bg-${solution.color}-50`}>
-                      <solution.icon className={`w-6 h-6 text-${solution.color}-500`} />
-                    </div>
-                    <h3 className="text-xl font-semibold text-neutral-900">
-                      {solution.title}
-                    </h3>
-                    <p className="text-neutral-600">
-                      {solution.description}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {solution.features.map((feature, i) => (
-                        <span
-                          key={i}
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-${solution.color}-50 text-${solution.color}-700`}
-                        >
-                          {feature}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="flex items-center text-primary-600 font-medium pt-4">
-                      Learn more
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </div>
-                  </div>
-                </div>
+              <div className="text-white mb-4">{solution.icon}</div>
+              <h3 className="text-xl font-semibold text-white mb-2">
+                {solution.title}
+              </h3>
+              <p className="text-white/80 mb-4">{solution.description}</p>
+              <Link
+                href={solution.href}
+                className="inline-flex items-center text-white hover:text-white/80 transition-colors"
+              >
+                Learn More <ArrowRight className="ml-2 w-4 h-4" />
               </Link>
             </motion.div>
           ))}

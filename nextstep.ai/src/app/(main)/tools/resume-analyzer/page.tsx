@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { FileText, CheckCircle, Zap, LineChart } from 'lucide-react';
+import NeuralAnimation from '@/components/NeuralAnimation';
 
 export default function ResumeAnalyzerPage() {
   const features = [
@@ -30,8 +31,9 @@ export default function ResumeAnalyzerPage() {
   return (
     <div className="min-h-screen bg-neutral-50">
       {/* Hero Section */}
-      <section className="bg-gradient-to-b from-primary-500 to-primary-600 text-white py-20">
-        <div className="container mx-auto px-4">
+      <section className="relative bg-gradient-to-b from-primary-500 to-primary-600 text-white py-20 overflow-hidden">
+        <NeuralAnimation />
+        <div className="container mx-auto px-4 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

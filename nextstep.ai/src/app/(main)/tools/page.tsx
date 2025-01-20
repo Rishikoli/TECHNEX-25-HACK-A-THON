@@ -3,6 +3,9 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowRight, FileText, CheckCircle, PenTool, Video } from 'lucide-react';
+import NeuralAnimation from '@/components/NeuralAnimation';
+import ToolsAnimation from '@/components/ToolsAnimation';
+import HeroWaveAnimation from '@/components/HeroWaveAnimation';
 
 export default function ToolsPage() {
   const tools = [
@@ -41,21 +44,26 @@ export default function ToolsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-neutral-50 py-20">
+    <div className="min-h-screen bg-neutral-50">
       {/* Hero Section */}
-      <section className="container mx-auto px-4 mb-20">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center max-w-3xl mx-auto"
-        >
-          <h1 className="text-4xl md:text-5xl font-bold text-neutral-900 mb-6">
-            AI-Powered Career Tools
-          </h1>
-          <p className="text-xl text-neutral-600 mb-8">
-            Transform your job search with our suite of advanced AI tools designed to optimize every aspect of your career journey.
-          </p>
-        </motion.div>
+      <section className="relative bg-gradient-to-b from-neutral-900 to-neutral-800 text-white py-20 overflow-hidden">
+        <NeuralAnimation />
+        <ToolsAnimation />
+        <HeroWaveAnimation />
+        <div className="container mx-auto px-4 relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center max-w-3xl mx-auto"
+          >
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
+              AI-Powered Career Tools
+            </h1>
+            <p className="text-xl text-neutral-300 mb-8">
+              Transform your job search with our suite of advanced AI tools designed to optimize every aspect of your career journey.
+            </p>
+          </motion.div>
+        </div>
       </section>
 
       {/* Tools Grid */}
