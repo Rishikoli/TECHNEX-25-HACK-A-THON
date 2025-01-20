@@ -1,155 +1,364 @@
 'use client';
 
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Video, Brain, MessageSquare, Target } from 'lucide-react';
-import NeuralAnimation from '@/components/NeuralAnimation';
+import { VideoFeedback } from '@/components/JobSimulation/VideoFeedback';
+import { LiveTranscript } from '@/components/JobSimulation/LiveTranscript';
+import { AIFeedback } from '@/components/JobSimulation/AIFeedback';
+import { PracticeNotes } from '@/components/JobSimulation/PracticeNotes';
+import { Briefcase, Video, MessageSquare, Brain } from 'lucide-react';
+import { FaceRadar } from '@/components/FaceDetection/FaceRadar';
+import { QuestionPanel } from '@/components/QuestionPanel/QuestionPanel';
+import { VideoRecorder } from '@/components/VideoRecording/VideoRecorder';
+import { AnswerFeedback } from '@/components/JobSimulation/AnswerFeedback';
+import { InterviewAnalytics } from '@/components/Analytics/InterviewAnalytics';
+
+interface InterviewQuestion {
+  id: number;
+  text: string;
+  category: string;
+  type: string;
+  difficulty: string;
+  expectedDuration: number;
+}
+
+interface InterviewType {
+  id: string;
+  title: string;
+  description: string;
+  icon: any;
+  questions: InterviewQuestion[];
+}
+
+const interviewTypes: InterviewType[] = [
+  {
+    id: 'behavioral',
+    title: 'Behavioral Interview',
+    description: 'Practice answering questions about your past experiences and behavior in professional situations',
+    icon: MessageSquare,
+    questions: [
+      {
+        id: 1,
+        text: "Tell me about a time when you had to deal with a difficult team member.",
+        category: "Teamwork",
+        type: "behavioral",
+        difficulty: "Medium",
+        expectedDuration: 180
+      },
+      {
+        id: 2,
+        text: "Describe a situation where you had to meet a tight deadline.",
+        category: "Time Management",
+        type: "behavioral",
+        difficulty: "Medium",
+        expectedDuration: 180
+      },
+      {
+        id: 3,
+        text: "Tell me about a project that failed and what you learned from it.",
+        category: "Problem Solving",
+        type: "behavioral",
+        difficulty: "Hard",
+        expectedDuration: 240
+      },
+      {
+        id: 4,
+        text: "How do you handle conflicts in the workplace?",
+        category: "Conflict Resolution",
+        type: "behavioral",
+        difficulty: "Medium",
+        expectedDuration: 180
+      }
+    ]
+  },
+  {
+    id: 'technical',
+    title: 'Technical Interview',
+    description: 'Practice technical questions, coding problems, and system design discussions',
+    icon: Brain,
+    questions: [
+      {
+        id: 1,
+        text: "Explain how you would design a scalable web application.",
+        category: "System Design",
+        type: "technical",
+        difficulty: "Hard",
+        expectedDuration: 300
+      },
+      {
+        id: 2,
+        text: "How would you optimize a slow-performing database query?",
+        category: "Database",
+        type: "technical",
+        difficulty: "Hard",
+        expectedDuration: 240
+      },
+      {
+        id: 3,
+        text: "Explain the concept of microservices and their advantages.",
+        category: "Architecture",
+        type: "technical",
+        difficulty: "Medium",
+        expectedDuration: 240
+      },
+      {
+        id: 4,
+        text: "How would you implement authentication in a RESTful API?",
+        category: "Security",
+        type: "technical",
+        difficulty: "Medium",
+        expectedDuration: 180
+      }
+    ]
+  },
+  {
+    id: 'simulation',
+    title: 'Job Simulation',
+    description: 'Complete real-world job scenarios and tasks with live feedback',
+    icon: Briefcase,
+    questions: [
+      {
+        id: 1,
+        text: "You're leading a project that's behind schedule. How do you handle this situation?",
+        category: "Project Management",
+        type: "simulation",
+        difficulty: "Hard",
+        expectedDuration: 300
+      },
+      {
+        id: 2,
+        text: "Present your solution for improving our product's user engagement.",
+        category: "Product Management",
+        type: "simulation",
+        difficulty: "Hard",
+        expectedDuration: 300
+      },
+      {
+        id: 3,
+        text: "A critical production system has gone down. Walk us through your incident response.",
+        category: "Crisis Management",
+        type: "simulation",
+        difficulty: "Hard",
+        expectedDuration: 240
+      },
+      {
+        id: 4,
+        text: "Review this code and explain potential improvements and security concerns.",
+        category: "Code Review",
+        type: "simulation",
+        difficulty: "Medium",
+        expectedDuration: 180
+      }
+    ]
+  }
+];
 
 export default function InterviewPrepPage() {
-  const features = [
-    {
-      icon: Video,
-      title: "AI Interview Simulation",
-      description: "Practice with our AI interviewer that adapts to your responses and industry."
-    },
-    {
-      icon: Brain,
-      title: "Smart Question Prediction",
-      description: "Get industry-specific questions based on your resume and target role."
-    },
-    {
-      icon: MessageSquare,
-      title: "Real-time Feedback",
-      description: "Receive instant feedback on your answers, body language, and speaking pace."
-    },
-    {
-      icon: Target,
-      title: "Personalized Coaching",
-      description: "Get tailored advice to improve your interview performance over time."
+  const [selectedType, setSelectedType] = useState<InterviewType | null>(null);
+  const [currentQuestion, setCurrentQuestion] = useState<InterviewQuestion | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [currentEmotion, setCurrentEmotion] = useState('');
+  const [recordingTime, setRecordingTime] = useState(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const startInterview = (type: InterviewType) => {
+    setSelectedType(type);
+    setCurrentQuestion(type.questions[0]);
+  };
+
+  const handleNextQuestion = () => {
+    if (!selectedType || !currentQuestion) return;
+    
+    const currentIndex = selectedType.questions.findIndex(q => q.id === currentQuestion.id);
+    if (currentIndex < selectedType.questions.length - 1) {
+      setCurrentQuestion(selectedType.questions[currentIndex + 1]);
+    } else {
+      setSelectedType(null);
+      setCurrentQuestion(null);
+      setIsRecording(false);
     }
-  ];
+  };
+
+  const handleVideoData = (blob: Blob) => {
+    setIsAnalyzing(true);
+    setTimeout(() => setIsAnalyzing(false), 2000);
+  };
 
   return (
-    <div className="min-h-screen bg-neutral-50">
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-b from-accent-500 to-accent-600 text-white py-20 overflow-hidden">
-        <NeuralAnimation />
-        <div className="container mx-auto px-4 relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-3xl mx-auto text-center"
-          >
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">
-              AI Interview Preparation
-            </h1>
-            <p className="text-xl opacity-90 mb-8">
-              Practice interviews with our AI-powered system and get real-time feedback to improve your performance.
-            </p>
-            <button className="bg-white text-accent-600 px-8 py-3 rounded-lg font-medium hover:bg-opacity-90 transition-colors">
-              Start Practice Interview
-            </button>
-          </motion.div>
+    <div className="min-h-screen bg-neutral-50 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            Interview Preparation
+          </h1>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Practice interviews with AI-powered feedback, emotion analysis, and real-time transcription.
+          </p>
         </div>
-      </section>
 
-      {/* Features Grid */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {features.map((feature, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="bg-white rounded-xl shadow-sm p-6"
-              >
-                <div className="flex items-start space-x-4">
-                  <div className="p-3 rounded-lg bg-accent-50">
-                    <feature.icon className="w-6 h-6 text-accent-500" />
+        {!selectedType ? (
+          <div className="space-y-12">
+            {interviewTypes.map((type) => (
+              <div key={type.id} className="bg-white rounded-lg shadow-lg p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center">
+                    <type.icon className="w-8 h-8 text-blue-600 mr-3" />
+                    <div>
+                      <h3 className="text-xl font-semibold">{type.title}</h3>
+                      <p className="text-gray-600 mt-1">{type.description}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-neutral-900 mb-2">
-                      {feature.title}
-                    </h3>
-                    <p className="text-neutral-600">
-                      {feature.description}
-                    </p>
-                  </div>
+                  <button
+                    onClick={() => startInterview(type)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Start Practice
+                  </button>
                 </div>
-              </motion.div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {type.questions.map((question, index) => (
+                    <div
+                      key={question.id}
+                      className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors"
+                    >
+                      <div className="flex items-start space-x-3">
+                        <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                          {index + 1}
+                        </div>
+                        <div>
+                          <p className="text-gray-900 mb-2">{question.text}</p>
+                          <div className="flex flex-wrap gap-2 text-sm">
+                            <span className="px-2 py-1 bg-blue-100 text-blue-600 rounded">
+                              {question.category}
+                            </span>
+                            <span className={`px-2 py-1 rounded ${
+                              question.difficulty === 'Hard'
+                                ? 'bg-red-100 text-red-600'
+                                : 'bg-yellow-100 text-yellow-600'
+                            }`}>
+                              {question.difficulty}
+                            </span>
+                            <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded">
+                              {question.expectedDuration}s
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
-        </div>
-      </section>
+        ) : (
+          <div className="space-y-8">
+            <button
+              onClick={() => setSelectedType(null)}
+              className="text-blue-600 hover:text-blue-700 transition-colors"
+            >
+              ← Back to Interview Types
+            </button>
 
-      {/* How It Works */}
-      <section className="bg-white py-20">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>
-          <div className="max-w-3xl mx-auto">
-            <div className="space-y-8">
-              {[
-                {
-                  step: "1",
-                  title: "Select Your Industry",
-                  description: "Choose your target industry and role for tailored interview questions."
-                },
-                {
-                  step: "2",
-                  title: "Start Practice Session",
-                  description: "Begin your AI-powered interview simulation with video and audio."
-                },
-                {
-                  step: "3",
-                  title: "Get Feedback",
-                  description: "Receive detailed feedback on your answers, delivery, and body language."
-                },
-                {
-                  step: "4",
-                  title: "Track Progress",
-                  description: "Monitor your improvement over time with detailed analytics."
-                }
-              ].map((item, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="flex items-start space-x-4"
-                >
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-accent-500 text-white flex items-center justify-center font-bold">
-                    {item.step}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <div className="relative">
+                  <VideoRecorder
+                    isRecording={isRecording}
+                    onRecordingComplete={(blob) => handleVideoData(blob)}
+                  />
+                  <FaceRadar
+                    videoRef={videoRef}
+                    isActive={isRecording}
+                  />
+                </div>
+
+                <div className="bg-white rounded-lg shadow-lg p-6">
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold mb-2">Current Question</h3>
+                    {currentQuestion && (
+                      <>
+                        <p className="text-gray-900 mb-2">{currentQuestion.text}</p>
+                        <div className="flex space-x-4 text-sm text-gray-500">
+                          <span>Category: {currentQuestion.category}</span>
+                          <span>Difficulty: {currentQuestion.difficulty}</span>
+                          <span>Time: {currentQuestion.expectedDuration}s</span>
+                        </div>
+                      </>
+                    )}
                   </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-neutral-900 mb-2">
-                      {item.title}
-                    </h3>
-                    <p className="text-neutral-600">
-                      {item.description}
-                    </p>
+
+                  <div className="flex space-x-4">
+                    <button
+                      onClick={() => setIsRecording(!isRecording)}
+                      className={`flex items-center px-4 py-2 rounded-lg transition-colors ${
+                        isRecording
+                          ? 'bg-red-600 text-white hover:bg-red-700'
+                          : 'bg-green-600 text-white hover:bg-green-700'
+                      }`}
+                    >
+                      <Video className="w-4 h-4 mr-2" />
+                      {isRecording ? 'Stop Recording' : 'Start Recording'}
+                    </button>
+                    <button
+                      onClick={handleNextQuestion}
+                      className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Next Question
+                    </button>
                   </div>
-                </motion.div>
-              ))}
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <LiveTranscript
+                  isActive={isRecording}
+                  onTranscriptUpdate={setTranscript}
+                />
+
+                <InterviewAnalytics
+                  transcript={transcript}
+                  emotion={currentEmotion}
+                  isRecording={isRecording}
+                  duration={recordingTime}
+                  expectedDuration={currentQuestion?.expectedDuration || 180}
+                />
+
+                <AIFeedback
+                  transcript={transcript}
+                  isAnalyzing={isAnalyzing}
+                  emotion={currentEmotion}
+                />
+
+                {transcript && currentQuestion && (
+                  <AnswerFeedback
+                    transcript={transcript}
+                    questionType={currentQuestion.type}
+                    category={currentQuestion.category}
+                  />
+                )}
+
+                <PracticeNotes />
+              </div>
             </div>
-          </div>
-        </div>
-      </section>
 
-      {/* CTA Section */}
-      <section className="bg-neutral-900 text-white py-20">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-6">
-            Ready to Ace Your Next Interview?
-          </h2>
-          <p className="text-lg text-neutral-300 mb-8 max-w-2xl mx-auto">
-            Join thousands of candidates who have improved their interview skills with our AI-powered practice platform.
-          </p>
-          <button className="bg-accent-500 text-white px-8 py-3 rounded-lg font-medium hover:bg-accent-600 transition-colors">
-            Practice Now
-          </button>
-        </div>
-      </section>
+            {selectedType && (
+              <QuestionPanel
+                questions={selectedType.questions}
+                currentQuestionId={currentQuestion?.id || 0}
+                onQuestionChange={(id) => {
+                  const question = selectedType.questions.find(q => q.id === id);
+                  if (question) {
+                    setCurrentQuestion(question);
+                  }
+                }}
+              />
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

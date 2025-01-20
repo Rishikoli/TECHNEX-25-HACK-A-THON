@@ -27,15 +27,9 @@ export const Header = () => {
       href: "/tools/resume-analyzer"
     },
     {
-      title: "ATS Optimizer",
-      description: "Ensure your resume passes ATS systems",
-      features: ["ATS Compatibility Score", "Format Validation", "Keyword Optimization"],
-      href: "/tools/ats-optimizer"
-    },
-    {
       title: "Interview Preparation",
-      description: "AI-powered interview practice & coaching",
-      features: ["Question Prediction", "Role-Specific Scenarios", "Real-time Feedback"],
+      description: "Comprehensive interview practice with AI-powered feedback",
+      features: ["Mock Interviews", "Job Simulations", "Real-time Feedback", "Video Analysis"],
       href: "/tools/interview-prep"
     }
   ];
