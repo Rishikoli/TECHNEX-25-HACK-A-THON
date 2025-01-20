@@ -19,7 +19,7 @@ export const Header = () => {
     closed: { opacity: 0, y: -10, transitionEnd: { display: "none" } }
   };
 
-  const toolsItems = [
+  const featuresItems = [
     {
       title: "Resume Analyzer",
       description: "AI-powered resume analysis & optimization",
@@ -40,7 +40,7 @@ export const Header = () => {
     }
   ];
 
-  const solutionsItems = [
+  const servicesItems = [
     {
       title: "Career Insights",
       description: "Data-driven career guidance & analytics",
@@ -102,23 +102,23 @@ export const Header = () => {
           animate={{ opacity: 1, y: 0 }}
           className="hidden md:flex items-center space-x-8"
         >
-          {/* Tools Dropdown */}
+          {/* Features Dropdown */}
           <div className="relative group">
             <button
               className="flex items-center space-x-1 text-neutral-600 hover:text-neutral-900 transition-colors"
-              onClick={() => setActiveDropdown(activeDropdown === 'tools' ? null : 'tools')}
+              onClick={() => setActiveDropdown(activeDropdown === 'features' ? null : 'features')}
             >
-              <span>Tools</span>
+              <span>Features</span>
               <ChevronDown size={16} />
             </button>
             <motion.div
               initial="closed"
-              animate={activeDropdown === 'tools' ? 'open' : 'closed'}
+              animate={activeDropdown === 'features' ? 'open' : 'closed'}
               variants={dropdownVariants}
               className="absolute top-full left-0 w-[480px] bg-white rounded-lg shadow-lg py-4 mt-2"
             >
               <div className="grid grid-cols-2 gap-4 p-4">
-                {toolsItems.map((item) => (
+                {featuresItems.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
@@ -142,23 +142,23 @@ export const Header = () => {
             </motion.div>
           </div>
 
-          {/* Solutions Dropdown */}
+          {/* Services Dropdown */}
           <div className="relative group">
             <button
               className="flex items-center space-x-1 text-neutral-600 hover:text-neutral-900 transition-colors"
-              onClick={() => setActiveDropdown(activeDropdown === 'solutions' ? null : 'solutions')}
+              onClick={() => setActiveDropdown(activeDropdown === 'services' ? null : 'services')}
             >
-              <span>Solutions</span>
+              <span>Services</span>
               <ChevronDown size={16} />
             </button>
             <motion.div
               initial="closed"
-              animate={activeDropdown === 'solutions' ? 'open' : 'closed'}
+              animate={activeDropdown === 'services' ? 'open' : 'closed'}
               variants={dropdownVariants}
               className="absolute top-full left-0 w-[480px] bg-white rounded-lg shadow-lg py-4 mt-2"
             >
               <div className="grid grid-cols-1 gap-4 p-4">
-                {solutionsItems.map((item) => (
+                {servicesItems.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
@@ -246,11 +246,11 @@ export const Header = () => {
           }`}
         >
           <div className="flex flex-col space-y-6">
-            {/* Mobile Tools Menu */}
+            {/* Mobile Features Menu */}
             <div className="space-y-3">
-              <div className="font-medium text-lg text-neutral-900">Tools</div>
+              <div className="font-medium text-lg text-neutral-900">Features</div>
               <div className="space-y-2">
-                {toolsItems.map((item) => (
+                {featuresItems.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
@@ -263,11 +263,11 @@ export const Header = () => {
               </div>
             </div>
 
-            {/* Mobile Solutions Menu */}
+            {/* Mobile Services Menu */}
             <div className="space-y-3">
-              <div className="font-medium text-lg text-neutral-900">Solutions</div>
+              <div className="font-medium text-lg text-neutral-900">Services</div>
               <div className="space-y-2">
-                {solutionsItems.map((item) => (
+                {servicesItems.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
