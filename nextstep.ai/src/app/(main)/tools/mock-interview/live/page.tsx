@@ -6,34 +6,40 @@ import { AIAvatar } from './components/AIAvatar';
 import { QuestionPanel } from './components/QuestionPanel';
 import { FeedbackPanel } from './components/FeedbackPanel';
 import { TranscriptionPanel } from './components/TranscriptionPanel';
+import { AnswerImprovement } from './components/AnswerImprovement';
 import { analyzeInterview, generateFollowUpQuestion, provideLiveCoachingTips } from './lib/gemini';
 import { motion } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 
 export default function LiveInterviewPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState('');
-  const [aiMessage, setAIMessage] = useState('Hello! I\'m your AI interviewer. Ready to begin?');
+  const [aiMessage, setAIMessage] = useState('Hello! I\'m your AI interviewer. Let\'s begin with your introduction. Tell me about yourself and your background.');
   const [transcript, setTranscript] = useState('');
   const [feedback, setFeedback] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [previousQuestions, setPreviousQuestions] = useState<string[]>([]);
   const [bodyLanguageData, setBodyLanguageData] = useState<any>(null);
   const [coachingTip, setCoachingTip] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [interviewStarted, setInterviewStarted] = useState(false);
+  const [currentAnswer, setCurrentAnswer] = useState('');
 
   // Handle real-time coaching tips
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
     
-    if (isRecording && transcript) {
+    if (isRecording && transcript && !error) {
       timeoutId = setTimeout(async () => {
         try {
           const tip = await provideLiveCoachingTips(transcript);
           setCoachingTip(tip);
+          setError(null);
         } catch (error) {
           console.error('Error getting coaching tip:', error);
+          setError('Failed to generate coaching tip. The interview will continue.');
         }
-      }, 5000); // Update coaching tip every 5 seconds
+      }, 5000);
     }
 
     return () => {
@@ -41,70 +47,110 @@ export default function LiveInterviewPage() {
         clearTimeout(timeoutId);
       }
     };
-  }, [isRecording, transcript]);
+  }, [isRecording, transcript, error]);
 
   const handleRecordingStart = useCallback(() => {
     setIsRecording(true);
     setFeedback(null);
     setCoachingTip(null);
-  }, []);
+    setError(null);
+    if (!interviewStarted) {
+      setInterviewStarted(true);
+    }
+  }, [interviewStarted]);
 
   const handleRecordingStop = useCallback(async (blob: Blob) => {
     setIsRecording(false);
     setIsAnalyzing(true);
+    setError(null);
 
     try {
       // Analyze the interview response
       const analysis = await analyzeInterview(
-        currentQuestion,
+        currentQuestion || 'Tell me about yourself',
         transcript,
-        transcript, // Using transcript for both since we have speech-to-text
+        transcript,
         bodyLanguageData
       );
 
       setFeedback(analysis);
 
-      // Generate follow-up question if score is good
-      if (analysis.score > 70) {
-        const followUp = await generateFollowUpQuestion(
-          currentQuestion,
-          transcript,
-          previousQuestions
-        );
-        
-        setPreviousQuestions(prev => [...prev, currentQuestion]);
-        setCurrentQuestion(followUp);
-        setAIMessage(followUp);
+      // Generate follow-up question if score is good or if it's the first question
+      if (analysis.score > 70 || previousQuestions.length === 0) {
+        try {
+          const followUp = await generateFollowUpQuestion(
+            currentQuestion || 'Tell me about yourself',
+            transcript,
+            previousQuestions
+          );
+          
+          setPreviousQuestions(prev => [...prev, currentQuestion || 'Tell me about yourself']);
+          setCurrentQuestion(followUp);
+          setAIMessage(followUp);
+        } catch (error) {
+          console.error('Error generating follow-up:', error);
+          setError('Failed to generate follow-up question. You can select a new question from the panel.');
+        }
+      } else {
+        setAIMessage('Consider trying another question. You can select one from the question panel.');
       }
     } catch (error) {
       console.error('Error analyzing interview:', error);
+      setError('Failed to analyze response. Please try again or select a different question.');
+      setFeedback({
+        score: 0,
+        strengths: ['Unable to analyze response'],
+        improvements: ['Please try again'],
+        technicalAccuracy: 0,
+        communicationClarity: 0,
+        confidence: 0,
+        bodyLanguage: ['Analysis unavailable']
+      });
     } finally {
       setIsAnalyzing(false);
     }
   }, [currentQuestion, transcript, bodyLanguageData, previousQuestions]);
 
   const handleQuestionSelect = useCallback((question: string) => {
-    setCurrentQuestion(question);
-    setAIMessage(question);
-    setPreviousQuestions(prev => [...prev, question]);
-  }, []);
+    if (!isRecording) {
+      setCurrentQuestion(question);
+      setAIMessage(question);
+      setPreviousQuestions(prev => [...prev, question]);
+      setError(null);
+    }
+  }, [isRecording]);
 
   const handleTranscriptionUpdate = useCallback((text: string) => {
     setTranscript(text);
+    setCurrentAnswer(text);
+    setError(null);
   }, []);
 
   const handleBodyLanguageUpdate = useCallback((data: any) => {
     setBodyLanguageData(data);
   }, []);
 
-  const handleMessageComplete = () => {
-    // Handle when AI finishes speaking
-  };
+  const handleMessageComplete = useCallback(() => {
+    // Optional: Add any actions after AI finishes speaking
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4"
+          >
+            <div className="flex items-center text-red-800">
+              <AlertCircle className="w-5 h-5 mr-2" />
+              <p>{error}</p>
+            </div>
+          </motion.div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column */}
           <div className="space-y-6">
             <motion.div
@@ -128,7 +174,7 @@ export default function LiveInterviewPage() {
                 isActive={!isRecording}
                 message={aiMessage}
                 onMessageComplete={handleMessageComplete}
-                autoPlay={false}
+                autoPlay={!interviewStarted}
               />
             </motion.div>
 
@@ -143,7 +189,7 @@ export default function LiveInterviewPage() {
               />
             </motion.div>
 
-            {coachingTip && (
+            {coachingTip && !error && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -168,6 +214,40 @@ export default function LiveInterviewPage() {
                 onQuestionSelect={handleQuestionSelect}
               />
             </motion.div>
+
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <h3 className="text-lg font-semibold mb-4">Your Answer</h3>
+              <div className="min-h-[200px] bg-gray-50 rounded-lg p-4">
+                <p className="whitespace-pre-wrap">{currentAnswer}</p>
+              </div>
+            </div>
+
+            {feedback && (
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <h3 className="text-lg font-semibold mb-4">AI Feedback</h3>
+                <div className="space-y-4">
+                  {Object.entries(feedback).map(([category, score], index) => (
+                    <div key={index}>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-gray-700 capitalize">{category.replace('_', ' ')}</span>
+                        <span className="text-sm font-medium text-gray-900">{score}/10</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-emerald-500 h-2 rounded-full transition-all duration-500"
+                          style={{ width: `${(score / 10) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <AnswerImprovement
+              currentQuestion={currentQuestion}
+              currentAnswer={currentAnswer}
+            />
 
             {isAnalyzing ? (
               <motion.div

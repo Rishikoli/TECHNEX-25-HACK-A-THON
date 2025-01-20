@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Filter, Plus } from 'lucide-react';
+import { Search, Filter, Plus, BookOpen, Code, Users, Brain, Briefcase, Lightbulb } from 'lucide-react';
 
 interface QuestionPanelProps {
   isRecording: boolean;
@@ -12,34 +12,68 @@ interface QuestionPanelProps {
 const defaultQuestions = [
   {
     category: 'Technical Skills',
+    icon: Code,
     questions: [
-      'Can you explain your experience with React and Next.js?',
-      'What are the key differences between useEffect and useLayoutEffect?',
-      'How do you handle state management in large applications?'
+      'Can you explain your experience with modern web frameworks like React and Next.js?',
+      'How do you handle state management in large applications?',
+      'Describe your approach to writing clean, maintainable code.',
+      'How do you ensure your code is secure and follows best practices?',
+      'What strategies do you use for optimizing application performance?'
     ]
   },
   {
     category: 'Problem Solving',
+    icon: Brain,
     questions: [
       'Describe a challenging technical problem you\'ve solved recently.',
       'How do you approach debugging complex issues?',
-      'What\'s your process for learning new technologies?'
+      'Tell me about a time when you had to make a difficult technical decision.',
+      'How do you stay updated with new technologies and industry trends?',
+      'What\'s your process for learning and implementing new technologies?'
     ]
   },
   {
-    category: 'Work Experience',
+    category: 'Project Experience',
+    icon: Briefcase,
     questions: [
-      'Tell me about your most recent project.',
+      'Tell me about your most significant project and your role in it.',
       'How do you handle tight deadlines and competing priorities?',
-      'Describe a time when you had to lead a team through a difficult situation.'
+      'Describe a time when you had to refactor a large codebase.',
+      'What project management methodologies have you worked with?',
+      'How do you ensure project requirements are met effectively?'
     ]
   },
   {
-    category: 'Behavioral',
+    category: 'Team Collaboration',
+    icon: Users,
     questions: [
       'How do you handle disagreements with team members?',
-      'Tell me about a time you failed and what you learned from it.',
-      'How do you stay updated with industry trends?'
+      'Describe your experience with code reviews and pair programming.',
+      'How do you communicate technical concepts to non-technical stakeholders?',
+      'Tell me about a time you mentored another developer.',
+      'How do you contribute to a positive team culture?'
+    ]
+  },
+  {
+    category: 'System Design',
+    icon: Lightbulb,
+    questions: [
+      'How do you approach designing scalable systems?',
+      'Describe your experience with microservices architecture.',
+      'How do you handle data modeling and database design?',
+      'What factors do you consider when choosing technologies for a new project?',
+      'How do you ensure system reliability and fault tolerance?'
+    ]
+  },
+  {
+    category: 'Learning & Growth',
+    icon: BookOpen,
+    questions: [
+      'What are your current learning goals in software development?',
+      'How do you handle feedback and criticism?',
+      'Tell me about a failure you\'ve experienced and what you learned.',
+      'How do you balance technical debt with new feature development?',
+      'What motivates you as a developer?'
     ]
   }
 ];
@@ -48,6 +82,7 @@ export function QuestionPanel({ isRecording, onQuestionSelect }: QuestionPanelPr
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [customQuestion, setCustomQuestion] = useState('');
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
   const filteredQuestions = defaultQuestions
     .filter(category => 
@@ -64,6 +99,7 @@ export function QuestionPanel({ isRecording, onQuestionSelect }: QuestionPanelPr
   const handleQuestionClick = (question: string) => {
     if (!isRecording) {
       onQuestionSelect(question);
+      setExpandedCategory(null);
     }
   };
 
@@ -73,6 +109,10 @@ export function QuestionPanel({ isRecording, onQuestionSelect }: QuestionPanelPr
       onQuestionSelect(customQuestion);
       setCustomQuestion('');
     }
+  };
+
+  const toggleCategory = (category: string) => {
+    setExpandedCategory(expandedCategory === category ? null : category);
   };
 
   return (
@@ -93,10 +133,10 @@ export function QuestionPanel({ isRecording, onQuestionSelect }: QuestionPanelPr
         </div>
 
         <div className="flex items-center space-x-2 overflow-x-auto pb-2">
-          <Filter className="w-4 h-4 text-gray-400" />
+          <Filter className="w-4 h-4 text-gray-400 flex-shrink-0" />
           <button
             onClick={() => setSelectedCategory(null)}
-            className={`px-3 py-1 rounded-full text-sm ${
+            className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${
               !selectedCategory
                 ? 'bg-emerald-100 text-emerald-700'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -104,17 +144,18 @@ export function QuestionPanel({ isRecording, onQuestionSelect }: QuestionPanelPr
           >
             All
           </button>
-          {defaultQuestions.map((category) => (
+          {defaultQuestions.map(({ category, icon: Icon }) => (
             <button
-              key={category.category}
-              onClick={() => setSelectedCategory(category.category)}
-              className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${
-                selectedCategory === category.category
+              key={category}
+              onClick={() => setSelectedCategory(category)}
+              className={`px-3 py-1 rounded-full text-sm whitespace-nowrap flex items-center ${
+                selectedCategory === category
                   ? 'bg-emerald-100 text-emerald-700'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              {category.category}
+              <Icon className="w-4 h-4 mr-1" />
+              {category}
             </button>
           ))}
         </div>
@@ -141,33 +182,49 @@ export function QuestionPanel({ isRecording, onQuestionSelect }: QuestionPanelPr
       </form>
 
       {/* Questions List */}
-      <div className="space-y-6">
+      <div className="space-y-4">
         {filteredQuestions.map((category) => (
           <motion.div
             key={category.category}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            className="border border-gray-100 rounded-lg overflow-hidden"
           >
-            <h4 className="text-sm font-medium text-gray-500 mb-2">
-              {category.category}
-            </h4>
-            <div className="space-y-2">
-              {category.questions.map((question, index) => (
-                <motion.button
-                  key={index}
-                  onClick={() => handleQuestionClick(question)}
-                  disabled={isRecording}
-                  className={`w-full text-left p-3 rounded-lg transition-colors ${
-                    isRecording
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-gray-50 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700'
-                  }`}
-                  whileHover={!isRecording ? { scale: 1.01 } : {}}
-                >
-                  {question}
-                </motion.button>
-              ))}
-            </div>
+            <button
+              onClick={() => toggleCategory(category.category)}
+              className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100"
+            >
+              <div className="flex items-center">
+                <category.icon className="w-5 h-5 mr-2 text-gray-500" />
+                <h4 className="font-medium text-gray-700">{category.category}</h4>
+              </div>
+              <span className="text-sm text-gray-500">{category.questions.length} questions</span>
+            </button>
+
+            {expandedCategory === category.category && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="border-t border-gray-100"
+              >
+                {category.questions.map((question, index) => (
+                  <motion.button
+                    key={index}
+                    onClick={() => handleQuestionClick(question)}
+                    disabled={isRecording}
+                    className={`w-full text-left p-3 border-b border-gray-100 last:border-b-0 transition-colors ${
+                      isRecording
+                        ? 'bg-gray-50 text-gray-400 cursor-not-allowed'
+                        : 'hover:bg-emerald-50 hover:text-emerald-700'
+                    }`}
+                    whileHover={!isRecording ? { x: 4 } : {}}
+                  >
+                    {question}
+                  </motion.button>
+                ))}
+              </motion.div>
+            )}
           </motion.div>
         ))}
 

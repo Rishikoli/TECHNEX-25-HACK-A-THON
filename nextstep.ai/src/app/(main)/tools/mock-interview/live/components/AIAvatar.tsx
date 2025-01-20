@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bot, Volume2, VolumeX } from 'lucide-react';
+import { Bot, Volume2, VolumeX, Settings } from 'lucide-react';
+import { generateSpeech, speakWithWebSpeech } from '../lib/voiceService';
 
 interface AIAvatarProps {
   message: string;
@@ -19,6 +20,9 @@ export function AIAvatar({
 }: AIAvatarProps) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(true);
+  const [useElevenLabs, setUseElevenLabs] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     if (isActive && audioEnabled && autoPlay) {
@@ -26,40 +30,81 @@ export function AIAvatar({
     }
   }, [message, isActive, audioEnabled, autoPlay]);
 
+  useEffect(() => {
+    // Initialize audio element
+    if (!audioRef.current) {
+      audioRef.current = new Audio();
+      audioRef.current.onended = () => {
+        setIsSpeaking(false);
+        onMessageComplete?.();
+      };
+      audioRef.current.onerror = () => {
+        setError('Failed to play audio');
+        setIsSpeaking(false);
+      };
+    }
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, [onMessageComplete]);
+
   const speakMessage = async (text: string) => {
     if (!audioEnabled) return;
 
-    setIsSpeaking(true);
-    
-    // Using Web Speech API for text-to-speech
-    const utterance = new SpeechSynthesisUtterance(text);
-    
-    // Configure voice settings
-    utterance.rate = 1;
-    utterance.pitch = 1;
-    utterance.volume = 1;
+    try {
+      setIsSpeaking(true);
+      setError(null);
 
-    // Try to use a natural-sounding voice if available
-    const voices = window.speechSynthesis.getVoices();
-    const preferredVoice = voices.find(
-      voice => voice.name.includes('Natural') || voice.name.includes('Premium')
-    );
-    if (preferredVoice) {
-      utterance.voice = preferredVoice;
-    }
-
-    utterance.onend = () => {
+      if (useElevenLabs) {
+        try {
+          const { audioUrl } = await generateSpeech(text);
+          if (audioRef.current) {
+            audioRef.current.src = audioUrl;
+            await audioRef.current.play();
+          }
+        } catch (error) {
+          console.error('ElevenLabs error, falling back to Web Speech:', error);
+          setUseElevenLabs(false);
+          await speakWithWebSpeech(text);
+          setIsSpeaking(false);
+          onMessageComplete?.();
+        }
+      } else {
+        await speakWithWebSpeech(text);
+        setIsSpeaking(false);
+        onMessageComplete?.();
+      }
+    } catch (error) {
+      console.error('Speech error:', error);
+      setError('Failed to generate speech');
       setIsSpeaking(false);
-      onMessageComplete?.();
-    };
-
-    window.speechSynthesis.speak(utterance);
+    }
   };
 
   const toggleAudio = () => {
     setAudioEnabled(!audioEnabled);
     if (isSpeaking) {
-      window.speechSynthesis.cancel();
+      if (useElevenLabs && audioRef.current) {
+        audioRef.current.pause();
+      } else {
+        window.speechSynthesis.cancel();
+      }
+      setIsSpeaking(false);
+    }
+  };
+
+  const toggleVoiceService = () => {
+    setUseElevenLabs(!useElevenLabs);
+    if (isSpeaking) {
+      if (useElevenLabs && audioRef.current) {
+        audioRef.current.pause();
+      } else {
+        window.speechSynthesis.cancel();
+      }
       setIsSpeaking(false);
     }
   };
@@ -114,20 +159,34 @@ export function AIAvatar({
           </div>
         </div>
 
-        <button
-          onClick={toggleAudio}
-          className={`p-2 rounded-full transition-colors ${
-            audioEnabled
-              ? 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-          }`}
-        >
-          {audioEnabled ? (
-            <Volume2 className="w-5 h-5" />
-          ) : (
-            <VolumeX className="w-5 h-5" />
-          )}
-        </button>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={toggleVoiceService}
+            className={`p-2 rounded-full transition-colors ${
+              useElevenLabs
+                ? 'bg-purple-100 text-purple-600 hover:bg-purple-200'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+            title={useElevenLabs ? 'Using ElevenLabs' : 'Using Web Speech'}
+          >
+            <Settings className="w-5 h-5" />
+          </button>
+
+          <button
+            onClick={toggleAudio}
+            className={`p-2 rounded-full transition-colors ${
+              audioEnabled
+                ? 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            {audioEnabled ? (
+              <Volume2 className="w-5 h-5" />
+            ) : (
+              <VolumeX className="w-5 h-5" />
+            )}
+          </button>
+        </div>
       </div>
 
       <AnimatePresence mode="wait">
@@ -142,7 +201,17 @@ export function AIAvatar({
         </motion.div>
       </AnimatePresence>
 
-      {!isActive && (
+      {error && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="mt-4 text-red-500 text-sm"
+        >
+          {error}
+        </motion.div>
+      )}
+
+      {!isActive && !isSpeaking && (
         <div className="mt-4">
           <button
             onClick={() => speakMessage(message)}
