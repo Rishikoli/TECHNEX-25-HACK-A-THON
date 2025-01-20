@@ -33,6 +33,18 @@ export const Header = () => {
       href: "/tools/ats-optimizer"
     },
     {
+      title: "Mock Interview",
+      description: "Practice with AI-powered mock interviews",
+      features: ["Real-time Feedback", "Video Analysis", "Performance Tracking"],
+      href: "/tools/mock-interview"
+    },
+    {
+      title: "Job Simulation",
+      description: "Complete job interview simulation with live feedback",
+      features: ["Live Transcription", "Video Analysis", "AI Feedback", "Practice Notes"],
+      href: "/tools/job-simulation"
+    },
+    {
       title: "Interview Preparation",
       description: "AI-powered interview practice & coaching",
       features: ["Question Prediction", "Role-Specific Scenarios", "Real-time Feedback"],
