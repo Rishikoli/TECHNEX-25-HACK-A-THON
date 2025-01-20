@@ -31,6 +31,12 @@ export const Header = () => {
       description: "Comprehensive interview practice with AI-powered feedback",
       features: ["Mock Interviews", "Job Simulations", "Real-time Feedback", "Video Analysis"],
       href: "/tools/interview-prep"
+    },
+    {
+      title: "Interview Question Bank",
+      description: "Comprehensive collection of interview questions with model answers",
+      features: ["Model Answers", "Interview Tips", "Preparation Guide"],
+      href: "/tools/interview-bank"
     }
   ];
 
