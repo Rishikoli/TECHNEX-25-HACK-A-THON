@@ -33,10 +33,10 @@ export const Header = () => {
       href: "/tools/interview-prep"
     },
     {
-      title: "Interview Question Bank",
-      description: "Comprehensive collection of interview questions with model answers",
-      features: ["Model Answers", "Interview Tips", "Preparation Guide"],
-      href: "/tools/interview-bank"
+      title: "Question Generator",
+      description: "AI-powered interview question generator with personalized questions",
+      features: ["Resume-based Questions", "Topic-based Questions", "Custom Questions", "AI Generation"],
+      href: "/tools/question-generator"
     }
   ];
 
