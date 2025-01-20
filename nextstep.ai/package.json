@@ -17,7 +17,8 @@
     "pdfjs-dist": "3.11.174",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-dropzone": "^14.2.3"
+    "react-dropzone": "^14.2.3",
+    "react-to-print": "^3.0.4"
   },
   "devDependencies": {
     "@types/node": "^20",
