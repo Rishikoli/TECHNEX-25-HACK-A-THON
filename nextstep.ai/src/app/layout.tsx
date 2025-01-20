@@ -4,11 +4,8 @@ import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import Navbar from '@/components/Navbar';
-<<<<<<< HEAD
 import { Toaster } from 'sonner';
-=======
 import { ChatbotWindow } from '@/components/Chatbot/ChatbotWindow';
->>>>>>> 453a17177f6c8d34d4d8d1ba476894a9cc2a80b4
 
 const inter = Inter({ subsets: ["latin"] });
 
