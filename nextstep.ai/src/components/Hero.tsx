@@ -1,12 +1,10 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, FileText, Sparkles, Target } from 'lucide-react';
-import FloatingBoxesAnimation from './FloatingBoxesAnimation';
 
 export const Hero = () => {
   return (
-    <section className="relative overflow-hidden">
-      <FloatingBoxesAnimation />
-      <div className="container mx-auto px-4 pt-32 pb-20 relative z-10">
+    <section className="pt-32 pb-20 overflow-hidden">
+      <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto text-center relative">
           {/* Background Decoration */}
           <motion.div
@@ -24,10 +22,10 @@ export const Hero = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="text-5xl md:text-6xl font-bold text-white mb-6"
+            className="text-5xl md:text-6xl font-bold text-neutral-900 mb-6"
           >
             Transform Your Career with{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-500 to-secondary-500">
               AI-Powered Tools
             </span>
           </motion.h1>
@@ -36,7 +34,7 @@ export const Hero = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-xl text-white/90 mb-8 max-w-2xl mx-auto"
+            className="text-xl text-neutral-600 mb-8 max-w-2xl mx-auto"
           >
             Get instant feedback, personalized recommendations, and improve your chances of landing your dream job with our advanced AI technology.
           </motion.p>
@@ -47,11 +45,11 @@ export const Hero = () => {
             transition={{ duration: 0.5, delay: 0.4 }}
             className="flex flex-col sm:flex-row gap-4 justify-center mb-12"
           >
-            <button className="px-8 py-4 bg-white/20 backdrop-blur-sm text-white rounded-lg hover:bg-white/30 transition-colors flex items-center justify-center space-x-2 group">
+            <button className="px-8 py-4 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors flex items-center justify-center space-x-2 group">
               <span>Analyze Your Resume</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>
-            <button className="px-8 py-4 border-2 border-white/30 text-white rounded-lg hover:bg-white/10 transition-colors">
+            <button className="px-8 py-4 border-2 border-primary-500 text-primary-500 rounded-lg hover:bg-primary-50 transition-colors">
               Learn More
             </button>
           </motion.div>
@@ -86,14 +84,13 @@ export const Hero = () => {
 
 const StatsCard = ({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) => (
   <motion.div
-    className="bg-white/10 backdrop-blur-sm rounded-lg p-6 text-center"
-    whileHover={{ scale: 1.05 }}
-    transition={{ type: "spring", stiffness: 300 }}
+    whileHover={{ y: -5 }}
+    className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-6 text-center"
   >
-    <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center text-white mx-auto mb-4">
+    <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center text-primary-500 mx-auto mb-4">
       {icon}
     </div>
-    <div className="text-2xl font-bold text-white mb-1">{value}</div>
-    <div className="text-white/80">{label}</div>
+    <div className="text-2xl font-bold text-neutral-900 mb-1">{value}</div>
+    <div className="text-neutral-600">{label}</div>
   </motion.div>
 );
