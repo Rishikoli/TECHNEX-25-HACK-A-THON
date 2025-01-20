@@ -32,9 +32,33 @@ const extractJSONFromText = (text: string) => {
   }
 };
 
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const retryWithBackoff = async <T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  initialDelay: number = 1000
+): Promise<T> => {
+  let retries = 0;
+  while (true) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      if (retries >= maxRetries || !error.message?.includes('429')) {
+        throw error;
+      }
+      const delayTime = initialDelay * Math.pow(2, retries);
+      await delay(delayTime);
+      retries++;
+    }
+  }
+};
+
 const handleGeminiError = (error: any) => {
   console.error('Error calling Gemini API:', error);
-  if (error.message?.includes('Failed to fetch')) {
+  if (error.message?.includes('429')) {
+    throw new Error('API rate limit exceeded. Please try again in a few moments.');
+  } else if (error.message?.includes('Failed to fetch')) {
     throw new Error('Unable to connect to the AI service. Please check your internet connection and try again.');
   } else if (error.message?.includes('API key')) {
     throw new Error('Invalid API key. Please check your environment variables.');
@@ -43,17 +67,18 @@ const handleGeminiError = (error: any) => {
   }
 };
 
-export const generateQuestionsFromResume = async (
-  resumeText: string,
+export const generateQuestionsFromSkills = async (
+  skills: string[],
+  experience: string,
   numberOfQuestions: number = 10
 ): Promise<QuestionSet> => {
   try {
     const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
     const prompt = `
-      Based on the following resume, generate ${numberOfQuestions} relevant technical interview questions.
-      Resume Content:
-      ${resumeText}
+      Generate ${numberOfQuestions} technical interview questions based on the following:
+      Skills: ${skills.join(', ')}
+      Experience Level: ${experience}
 
       Generate a JSON object with the following structure:
       {
@@ -72,12 +97,17 @@ export const generateQuestionsFromResume = async (
         "estimatedDuration": "total time in format: X hours Y minutes"
       }
 
+      Ensure questions match the experience level and focus on practical scenarios.
       Respond with ONLY the JSON object, no additional text.
     `;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    const generateContent = async () => {
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      return response.text();
+    };
+
+    const text = await retryWithBackoff(generateContent);
     const parsed = extractJSONFromText(text);
     
     return {
@@ -87,7 +117,7 @@ export const generateQuestionsFromResume = async (
       estimatedDuration: parsed.estimatedDuration || 'N/A'
     };
   } catch (error) {
-    return handleGeminiError(error);
+    throw handleGeminiError(error);
   }
 };
 
@@ -122,9 +152,13 @@ export const generateQuestionsByTopic = async (
       Respond with ONLY the JSON object, no additional text.
     `;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    const generateContent = async () => {
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      return response.text();
+    };
+
+    const text = await retryWithBackoff(generateContent);
     const parsed = extractJSONFromText(text);
     
     return {
@@ -134,7 +168,7 @@ export const generateQuestionsByTopic = async (
       estimatedDuration: parsed.estimatedDuration || 'N/A'
     };
   } catch (error) {
-    return handleGeminiError(error);
+    throw handleGeminiError(error);
   }
 };
 
@@ -175,9 +209,13 @@ export const generateCustomQuestions = async (
       Respond with ONLY the JSON object, no additional text.
     `;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    const generateContent = async () => {
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      return response.text();
+    };
+
+    const text = await retryWithBackoff(generateContent);
     const parsed = extractJSONFromText(text);
     
     return {
@@ -187,6 +225,6 @@ export const generateCustomQuestions = async (
       estimatedDuration: parsed.estimatedDuration || 'N/A'
     };
   } catch (error) {
-    return handleGeminiError(error);
+    throw handleGeminiError(error);
   }
 };
