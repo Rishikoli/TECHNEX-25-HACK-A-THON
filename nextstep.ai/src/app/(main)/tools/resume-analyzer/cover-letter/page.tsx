@@ -1,91 +1,120 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { FileText, Target, Sparkles, Send } from 'lucide-react';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import FileUpload from './components/FileUpload';
+import JobDetails from './components/JobDetails';
+import type { JobDetailsData } from './components/JobDetails';
 
-export default function CoverLetterGeneratorPage() {
+export default function CoverLetterPage() {
+  const router = useRouter();
+  const [resumeText, setResumeText] = useState<string>('');
+  const [jobDetails, setJobDetails] = useState<JobDetailsData>({
+    jobTitle: '',
+    companyName: '',
+    jobDescription: '',
+  });
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleResumeSelect = (text: string) => {
+    setResumeText(text);
+  };
+
+  const handleError = (message: string) => {
+    toast.error(message);
+  };
+
+  const handleJobDetailsChange = (details: JobDetailsData) => {
+    setJobDetails(details);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!resumeText) {
+      toast.error('Please upload your resume first');
+      return;
+    }
+
+    if (!jobDetails.jobTitle || !jobDetails.companyName || !jobDetails.jobDescription) {
+      toast.error('Please fill in all job details');
+      return;
+    }
+
+    try {
+      setIsGenerating(true);
+      const response = await fetch('/api/generate-cover-letter', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          resume: resumeText,
+          ...jobDetails,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to generate cover letter');
+      }
+
+      const data = await response.json();
+      
+      // Store the generated cover letter and job details in localStorage
+      localStorage.setItem('coverLetter', data.coverLetter);
+      localStorage.setItem('jobTitle', jobDetails.jobTitle);
+      localStorage.setItem('companyName', jobDetails.companyName);
+
+      // Navigate to the display page
+      router.push('/tools/resume-analyzer/cover-letter/display');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to generate cover letter');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-neutral-50 p-6">
-      <div className="max-w-4xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl shadow-sm p-8"
-        >
-          <h1 className="text-3xl font-bold mb-6">Cover Letter Generator</h1>
-          <p className="text-neutral-600 mb-8">
-            Create personalized cover letters that perfectly match your experience and the job requirements.
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div className="bg-neutral-50 rounded-lg p-6">
-              <FileText className="w-8 h-8 text-primary-600 mb-4" />
-              <h3 className="text-xl font-semibold mb-3">Resume Import</h3>
-              <p className="text-neutral-600">
-                Import your resume to automatically extract key experiences and skills
-              </p>
-              <button className="mt-4 bg-white border border-primary-600 text-primary-600 px-4 py-2 rounded-lg hover:bg-primary-50 transition-colors">
-                Import Resume
-              </button>
-            </div>
-
-            <div className="bg-neutral-50 rounded-lg p-6">
-              <Target className="w-8 h-8 text-primary-600 mb-4" />
-              <h3 className="text-xl font-semibold mb-3">Job Description</h3>
-              <p className="text-neutral-600">
-                Paste the job description to tailor your cover letter
-              </p>
-              <button className="mt-4 bg-white border border-primary-600 text-primary-600 px-4 py-2 rounded-lg hover:bg-primary-50 transition-colors">
-                Add Job Details
-              </button>
-            </div>
-          </div>
-
-          <div className="space-y-6 mb-8">
-            <div className="bg-neutral-50 rounded-lg p-6">
-              <Sparkles className="w-8 h-8 text-primary-600 mb-4" />
-              <h3 className="text-xl font-semibold mb-3">AI Customization</h3>
-              <p className="text-neutral-600">
-                Our AI will generate a customized cover letter highlighting your relevant experiences and skills
-              </p>
-              <div className="mt-4 space-y-4">
-                <div className="flex items-center space-x-2">
-                  <input type="checkbox" id="formal" className="rounded text-primary-600" />
-                  <label htmlFor="formal">Formal Tone</label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <input type="checkbox" id="creative" className="rounded text-primary-600" />
-                  <label htmlFor="creative">Creative Style</label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <input type="checkbox" id="achievements" className="rounded text-primary-600" />
-                  <label htmlFor="achievements">Emphasize Achievements</label>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-neutral-50 rounded-lg p-6">
-              <Send className="w-8 h-8 text-primary-600 mb-4" />
-              <h3 className="text-xl font-semibold mb-3">Export Options</h3>
-              <p className="text-neutral-600">
-                Export your cover letter in multiple formats
-              </p>
-              <div className="mt-4 flex space-x-4">
-                <button className="bg-white border border-primary-600 text-primary-600 px-4 py-2 rounded-lg hover:bg-primary-50 transition-colors">
-                  Download as PDF
-                </button>
-                <button className="bg-white border border-primary-600 text-primary-600 px-4 py-2 rounded-lg hover:bg-primary-50 transition-colors">
-                  Download as DOCX
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <button className="w-full bg-primary-600 text-white px-8 py-3 rounded-lg hover:bg-primary-700 transition-colors">
-            Generate Cover Letter
-          </button>
-        </motion.div>
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Cover Letter Generator</h1>
+        <p className="text-neutral-600">
+          Upload your resume and provide job details to generate a tailored cover letter.
+        </p>
       </div>
+
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <div>
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Upload Resume</h2>
+            <FileUpload onFileSelect={handleResumeSelect} onError={handleError} />
+          </div>
+
+          <div>
+            <h2 className="text-xl font-semibold my-4">Job Details</h2>
+            <JobDetails onChange={handleJobDetailsChange} />
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={isGenerating}
+          className={`w-full py-3 px-6 text-white bg-primary-600 rounded-lg font-medium
+            ${isGenerating ? 'opacity-50 cursor-not-allowed' : 'hover:bg-primary-700'}
+            transition-colors duration-200`}
+        >
+          {isGenerating ? (
+            <div className="flex items-center justify-center space-x-2">
+              <div className="w-5 h-5 border-t-2 border-white rounded-full animate-spin"></div>
+              <span>Generating Cover Letter...</span>
+            </div>
+          ) : (
+            'Generate Cover Letter'
+          )}
+        </button>
+      </form>
     </div>
   );
 }
