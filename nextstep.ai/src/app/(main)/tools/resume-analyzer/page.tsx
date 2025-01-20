@@ -8,23 +8,27 @@ export default function ResumeAnalyzerPage() {
   const features = [
     {
       icon: FileText,
-      title: "Smart Resume Analysis",
-      description: "Our Gemini AI analyzes your resume's content, structure, and formatting to provide comprehensive feedback."
+      title: "Resume Analysis",
+      description: "Get comprehensive feedback on your resume's content, structure, and formatting with Gemini AI.",
+      path: "/tools/resume-analyzer/analysis"
     },
     {
       icon: CheckCircle,
-      title: "Keyword Optimization",
-      description: "Identify and optimize for industry-specific keywords that match your target job descriptions."
+      title: "ATS Optimization",
+      description: "Optimize your resume for Applicant Tracking Systems with keyword suggestions and formatting tips.",
+      path: "/tools/resume-analyzer/ats-optimization"
     },
     {
       icon: Zap,
-      title: "Real-time Suggestions",
-      description: "Get instant feedback on improvements as you make changes to your resume."
+      title: "Skills Enhancement",
+      description: "Get personalized recommendations to improve your skills presentation and professional summary.",
+      path: "/tools/resume-analyzer/skills-enhancement"
     },
     {
       icon: LineChart,
-      title: "Performance Metrics",
-      description: "Track your resume's improvement over time with detailed analytics and scoring."
+      title: "Cover Letter Generator",
+      description: "Generate customized cover letters that match your resume and target job descriptions.",
+      path: "/tools/resume-analyzer/cover-letter"
     }
   ];
 
@@ -45,7 +49,10 @@ export default function ResumeAnalyzerPage() {
             <p className="text-xl opacity-90 mb-8">
               Transform your resume with advanced AI analysis and get personalized recommendations to stand out from the competition.
             </p>
-            <button className="bg-white text-primary-600 px-8 py-3 rounded-lg font-medium hover:bg-opacity-90 transition-colors">
+            <button 
+              onClick={() => window.location.href = '/tools/resume-analyzer/analysis'} 
+              className="bg-white text-primary-600 px-8 py-3 rounded-lg font-medium hover:bg-opacity-90 transition-colors"
+            >
               Analyze Your Resume
             </button>
           </motion.div>
@@ -62,7 +69,8 @@ export default function ResumeAnalyzerPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="bg-white rounded-xl shadow-sm p-6"
+                className="bg-white rounded-xl shadow-sm p-6 cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => window.location.href = feature.path}
               >
                 <div className="flex items-start space-x-4">
                   <div className="p-3 rounded-lg bg-primary-50">
