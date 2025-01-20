@@ -27,10 +27,10 @@ export const Header = () => {
       href: "/tools/resume-analyzer"
     },
     {
-      title: "Interview Preparation",
-      description: "Comprehensive interview practice with AI-powered feedback",
-      features: ["Mock Interviews", "Job Simulations", "Real-time Feedback", "Video Analysis"],
-      href: "/tools/interview-prep"
+      title: "Mock Interview",
+      description: "Practice with live and AI-powered mock interviews",
+      features: ["Live Video Interview", "AI Interview Practice", "Real-time Feedback", "Performance Analysis"],
+      href: "/tools/mock-interview"
     },
     {
       title: "Question Generator",
