@@ -42,24 +42,37 @@ export const Header = () => {
 
   const servicesItems = [
     {
+      title: "AI Career Coach",
+      description: "Personalized career guidance powered by AI",
+      features: [
+        "Career Path Planning",
+        "Skill Gap Analysis",
+        "Industry Insights",
+        "Learning Paths"
+      ],
+      href: "/solutions/ai-career-coach"
+    },
+    {
+      title: "Salary Navigator",
+      description: "Comprehensive salary and compensation analysis",
+      features: [
+        "Salary Calculator",
+        "Benefits Analysis",
+        "Negotiation Tools",
+        "Counter-offer Evaluator"
+      ],
+      href: "/solutions/salary-navigator"
+    },
+    {
       title: "Career Insights",
       description: "Data-driven career guidance & analytics",
       features: [
         "Job Market Analysis",
-        "Skill Gap Assessment",
-        "Career Path Planning"
+        "Industry Trends",
+        "Skill Demand Tracking",
+        "Growth Opportunities"
       ],
       href: "/solutions/career-insights"
-    },
-    {
-      title: "Skill Development",
-      description: "Personalized learning recommendations",
-      features: [
-        "Skill Trend Analysis",
-        "Learning Path Creation",
-        "Progress Tracking"
-      ],
-      href: "/solutions/skill-development"
     }
   ];
 
