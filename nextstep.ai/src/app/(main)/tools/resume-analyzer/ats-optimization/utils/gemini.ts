@@ -188,20 +188,31 @@ export async function optimizeResume(resumeText: string, jobDescription?: string
       const prompt = `You are an expert ATS (Applicant Tracking System) optimization specialist. Your task is to analyze and optimize the provided resume${jobDescription ? ' for a specific job description' : ''}.
 
 IMPORTANT FORMATTING RULES:
-1. Use clean, professional formatting without asterisks or special characters
-2. Use proper line breaks and indentation
-3. Use "•" or "-" for bullet points (not asterisks)
-4. Capitalize section headers
-5. Keep contact information at the top
-6. Use consistent date formats (e.g., MM/YYYY)
-7. Group similar information together
-8. Use clear section headers like "EXPERIENCE", "EDUCATION", "SKILLS"
-9. Remove any unnecessary symbols or decorations
+1. NEVER use asterisks (*) anywhere in the resume
+2. Use these exact section headers (in capital letters):
+   - PROFILE SUMMARY
+   - EXPERIENCE
+   - EDUCATION
+   - SKILLS
+   - CERTIFICATIONS (if applicable)
+   - PROJECTS (if applicable)
+3. Format dates as: MM/YYYY (e.g., 06/2023)
+4. Use bullet points with "•" symbol (not "-" or "*")
+5. Contact information format:
+   Full Name
+   Email | Phone | Location
+6. Experience format:
+   Company Name
+   Job Title (MM/YYYY - MM/YYYY)
+   • Achievement
+   • Achievement
+7. Skills format:
+   Category: Skill 1, Skill 2, Skill 3
 
 Your response must be ONLY a JSON object with no additional text. The JSON must follow this structure:
 
 {
-  "optimizedResume": "FULL_NAME\\nEmail | Phone | Location\\n\\nEXPERIENCE\\nCompany Name\\nJob Title (MM/YYYY - MM/YYYY)\\n• Achievement 1\\n• Achievement 2\\n\\nEDUCATION\\n...",
+  "optimizedResume": "FULL NAME\\nEmail | Phone | Location\\n\\nPROFILE SUMMARY\\nConcise professional summary without any special characters\\n\\nEXPERIENCE\\nCompany Name\\nJob Title (MM/YYYY - MM/YYYY)\\n• Achievement 1\\n• Achievement 2\\n\\nEDUCATION\\n...",
   "improvements": {
     "keywords": ["Added keyword 1", "Added keyword 2"],
     "formatting": ["Format improvement 1", "Format improvement 2"],
@@ -219,6 +230,15 @@ Your response must be ONLY a JSON object with no additional text. The JSON must 
     "recommendations": ["Recommendation 1", "Recommendation 2"]
   }` : ''}
 }
+
+IMPORTANT NOTES:
+1. Remove ALL asterisks (*) from both headings and content
+2. Replace any asterisks in bullet points with "•"
+3. Use plain text without any special formatting
+4. Keep section headers in CAPITAL LETTERS
+5. Maintain clean, consistent spacing between sections
+6. Ensure all dates follow MM/YYYY format
+7. Remove any decorative characters or symbols
 
 Original Resume:
 ${cleanedText}

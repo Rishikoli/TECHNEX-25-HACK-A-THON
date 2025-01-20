@@ -10,6 +10,16 @@ export default function ResumeDisplay({ content }: ResumeDisplayProps) {
   // Split content into sections based on line breaks and empty lines
   const sections = content.split(/\n\s*\n/).filter(Boolean);
 
+  // Common section headers
+  const SECTION_HEADERS = [
+    'PROFILE SUMMARY',
+    'EXPERIENCE',
+    'EDUCATION',
+    'SKILLS',
+    'CERTIFICATIONS',
+    'PROJECTS'
+  ];
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -18,7 +28,7 @@ export default function ResumeDisplay({ content }: ResumeDisplayProps) {
     >
       {sections.map((section, index) => {
         const lines = section.split('\n');
-        const isHeader = lines[0].toUpperCase() === lines[0];
+        const isHeader = SECTION_HEADERS.includes(lines[0]);
         const isContact = index === 0; // Assuming first section is contact info
 
         if (isContact) {
@@ -40,7 +50,7 @@ export default function ResumeDisplay({ content }: ResumeDisplayProps) {
               // Check if line is a section header
               if (lineIndex === 0 && isHeader) {
                 return (
-                  <h2 key={lineIndex} className="text-lg font-semibold text-gray-800 mb-3 pb-1 border-b border-gray-200">
+                  <h2 key={lineIndex} className="text-lg font-semibold text-gray-800 mb-4 pb-1 border-b border-gray-200">
                     {line}
                   </h2>
                 );
@@ -58,12 +68,12 @@ export default function ResumeDisplay({ content }: ResumeDisplayProps) {
               }
               
               // Check if line is a bullet point
-              if (line.trim().startsWith('•') || line.trim().startsWith('-')) {
+              if (line.trim().startsWith('•')) {
                 return (
                   <div key={lineIndex} className="flex items-start gap-3 mb-2 last:mb-0 pl-4">
                     <div className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-2 flex-shrink-0" />
                     <span className="text-gray-700 flex-grow">
-                      {line.replace(/^[•-]\s*/, '')}
+                      {line.replace(/^[•]\s*/, '')}
                     </span>
                   </div>
                 );
@@ -74,6 +84,17 @@ export default function ResumeDisplay({ content }: ResumeDisplayProps) {
                 return (
                   <div key={lineIndex} className="text-gray-800 font-medium mb-1">
                     {line}
+                  </div>
+                );
+              }
+
+              // Check if line is a skills category
+              if (line.includes(':')) {
+                const [category, skills] = line.split(':').map(s => s.trim());
+                return (
+                  <div key={lineIndex} className="mb-2">
+                    <span className="font-medium text-gray-800">{category}:</span>
+                    <span className="text-gray-700 ml-2">{skills}</span>
                   </div>
                 );
               }
