@@ -7,6 +7,8 @@ import { LiveTranscript } from './LiveTranscript/LiveTranscript';
 import { AITips } from './AITips/AITips';
 import { AIFeedback } from './AIFeedback/AIFeedback';
 import { SavedRecordings } from './SavedRecordings/SavedRecordings';
+import { ImprovementPanel } from '@/app/(main)/tools/mock-interview/components/ImprovementPanel';
+import { ModelAnswer } from '@/app/(main)/tools/mock-interview/components/ModelAnswer';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -266,203 +268,91 @@ export const MockInterview = ({ questions, type }: MockInterviewProps) => {
     setSavedRecordings(prev => prev.filter(r => r.id !== id));
   };
 
+  const currentQuestion = questions[currentQuestionIndex];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header Section with Gradient Background */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-2xl shadow-lg p-8 text-white">
-          <div className="absolute inset-0 bg-grid-white/[0.2] bg-[size:20px_20px]" />
-          <div className="relative">
-            <div className="flex items-center justify-between">
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Target className="w-6 h-6" />
-                  <h1 className="text-3xl font-bold">
-                    {type === 'behavioral' ? 'Behavioral' : 'Technical'} Interview
-                  </h1>
-                </div>
-                <p className="text-white/80">
-                  Master your interview skills with AI-powered feedback and real-time analytics
-                </p>
-              </div>
-              <div className="flex items-center space-x-4">
-                <motion.div
-                  className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Timer className="w-4 h-4" />
-                  <span className="font-medium">
-                    {formatTime(elapsedTime)}
-                  </span>
-                </motion.div>
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={resetInterview}
-                    className="hover:bg-white/20 text-white border border-white/20"
-                  >
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    Reset
-                  </Button>
-                </motion.div>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* Main Interview Area - Takes up 2/3 of the space on large screens */}
+      <div className="lg:col-span-2 space-y-6">
+        {/* Question Card */}
+        <Card className="p-6">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h3 className="text-xl font-semibold mb-2">Question {currentQuestionIndex + 1}</h3>
+              <p className="text-gray-600 mb-4">{currentQuestion.text}</p>
+              <div className="flex gap-4 text-sm text-gray-500">
+                <span className="flex items-center">
+                  <Target className="w-4 h-4 mr-1" />
+                  {currentQuestion.category}
+                </span>
+                <span className="flex items-center">
+                  <Timer className="w-4 h-4 mr-1" />
+                  {Math.floor(currentQuestion.expectedDuration / 60)} min
+                </span>
               </div>
             </div>
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-          {/* Main Content - Left Side (3 columns) */}
-          <div className="lg:col-span-3 space-y-8">
-            {/* Question Card with Enhanced Design */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentQuestionIndex}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-              >
-                <Card className="relative overflow-hidden bg-white p-6 shadow-lg hover:shadow-xl transition-shadow duration-300">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-bl-full opacity-50 pointer-events-none" />
-                  <div className="relative">
-                    <div className="flex items-start space-x-4">
-                      <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl shadow-lg">
-                        <MessageSquare className="w-6 h-6 text-white" />
-                      </div>
-                      <div className="flex-1 space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div className="space-y-1">
-                            <h3 className="text-sm font-medium text-gray-500">
-                              Question {currentQuestionIndex + 1} of {questions.length}
-                            </h3>
-                            <div className="flex items-center space-x-2">
-                              <span className="px-2 py-1 bg-indigo-50 text-indigo-600 text-xs font-medium rounded-full">
-                                {questions[currentQuestionIndex]?.category || type}
-                              </span>
-                              <span className="px-2 py-1 bg-purple-50 text-purple-600 text-xs font-medium rounded-full">
-                                {questions[currentQuestionIndex]?.difficulty || 'Medium'}
-                              </span>
-                              <span className="px-2 py-1 bg-blue-50 text-blue-600 text-xs font-medium rounded-full">
-                                {Math.ceil(questions[currentQuestionIndex]?.expectedDuration / 60) || 2} min
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <p className="text-xl font-medium text-gray-900 leading-relaxed">
-                          {questions[currentQuestionIndex]?.text || 'Loading question...'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              </motion.div>
-            </AnimatePresence>
-
-            {/* Video Recorder */}
+          
+          {/* Video Recording Section */}
+          <div className="mt-6">
             <VideoRecorder
-              onRecordingComplete={(blob) => {
-                setSavedRecordings(prev => [...prev, { 
-                  blob,
-                  timestamp: new Date(),
-                  question: questions[currentQuestionIndex]?.text || ''
-                }]);
-              }}
-              onRecordingStart={() => {
-                setIsRecording(true);
-                resetTranscript();
-                startSpeechRecognition();
-              }}
-              onRecordingStop={() => {
-                setIsRecording(false);
-                stopSpeechRecognition();
-              }}
-            />
-
-            {/* Controls with Enhanced Design */}
-            <div className="flex items-center justify-between bg-white p-4 rounded-xl shadow-lg">
-              <div className="flex items-center space-x-4">
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  {!isRecording ? (
-                    <Button
-                      onClick={startRecording}
-                      className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:from-indigo-600 hover:to-purple-600"
-                    >
-                      <Play className="w-4 h-4 mr-2" />
-                      {interviewStarted ? 'Resume' : 'Start'} Recording
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={pauseRecording}
-                      variant="outline"
-                      className="border-2"
-                    >
-                      <Pause className="w-4 h-4 mr-2" />
-                      Pause
-                    </Button>
-                  )}
-                </motion.div>
-                {isRecording && (
-                  <span className="text-sm text-gray-500">
-                    Capturing your response...
-                  </span>
-                )}
-              </div>
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button
-                  onClick={handleNextQuestion}
-                  disabled={currentQuestionIndex === questions.length - 1}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
-                >
-                  Next Question
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-              </motion.div>
-            </div>
-
-            {/* Live Transcript */}
-            <LiveTranscript 
-              transcript={displayTranscript}
               isRecording={isRecording}
-            />
-
-            {/* Saved Recordings */}
-            <SavedRecordings
-              recordings={savedRecordings}
-              onPlay={handlePlayRecording}
-              onDelete={handleDeleteRecording}
-              onDownload={handleDownloadRecording}
+              onRecordingComplete={handleSaveRecording}
             />
           </div>
+        </Card>
 
-          {/* Right Side - Analytics and Feedback (2 columns) */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="sticky top-6 space-y-6">
-              {/* Real-time Metrics */}
-              <AITips
-                transcript={displayTranscript}
-                isRecording={isRecording}
-                question={questions[currentQuestionIndex]?.text || ''}
-                type={type}
-              />
-
-              {/* AI Feedback and Improvements */}
-              <AIFeedback
-                transcript={displayTranscript}
-                question={questions[currentQuestionIndex]?.text || ''}
-                type={type}
-                isRecording={isRecording}
-              />
-
-              {/* Performance Analytics */}
-              <InterviewAnalytics 
-                transcript={displayTranscript}
-                isRecording={isRecording}
-              />
-            </div>
+        {/* Controls and Transcript */}
+        <div className="space-y-6">
+          <div className="flex gap-4 justify-center">
+            {!isRecording ? (
+              <Button
+                onClick={startRecording}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Play className="w-4 h-4 mr-2" />
+                Start Recording
+              </Button>
+            ) : (
+              <Button
+                onClick={pauseRecording}
+                variant="destructive"
+              >
+                <Pause className="w-4 h-4 mr-2" />
+                Stop Recording
+              </Button>
+            )}
+            <Button
+              onClick={resetInterview}
+              variant="outline"
+              disabled={isRecording}
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Reset
+            </Button>
           </div>
+
+          <LiveTranscript
+            isActive={isRecording}
+            onTranscriptUpdate={(transcript) => {
+              setCurrentTranscript(transcript);
+            }}
+          />
         </div>
+
+        {/* Analytics and Feedback */}
+        <div className="space-y-6">
+          <InterviewAnalytics />
+          <AIFeedback />
+          <SavedRecordings recordings={savedRecordings} onPlayRecording={handlePlayRecording} onDelete={handleDeleteRecording} onDownload={handleDownloadRecording} />
+        </div>
+      </div>
+
+      {/* Right Sidebar - Takes up 1/3 of the space on large screens */}
+      <div className="space-y-6">
+        <ImprovementPanel transcript={displayTranscript} />
+        <ModelAnswer question={currentQuestion.text} />
+        <AITips />
       </div>
     </div>
   );
