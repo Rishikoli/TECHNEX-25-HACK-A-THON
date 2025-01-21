@@ -1,21 +1,16 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
-interface FloatingAvatarProps {
-  modelPath: string;
-  onClick: () => void;
-}
-
-export const FloatingAvatar = ({ modelPath, onClick }: FloatingAvatarProps) => {
+export const FloatingAvatar = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const animationFrameRef = useRef<number>();
   const modelRef = useRef<THREE.Object3D | null>(null);
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
-  const isHoveredRef = useRef(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -50,103 +45,56 @@ export const FloatingAvatar = ({ modelPath, onClick }: FloatingAvatarProps) => {
     directionalLight.position.set(0, 1, 1);
     scene.add(directionalLight);
 
-    // Load model
-    const loader = new GLTFLoader();
-    loader.load(
-      modelPath,
-      (gltf) => {
-        const model = gltf.scene;
-        model.scale.set(0.5, 0.5, 0.5);
-        model.position.set(0, -0.5, 0);
-        scene.add(model);
-        modelRef.current = model;
+    // Add a simple sphere as placeholder
+    const geometry = new THREE.SphereGeometry(0.5, 32, 32);
+    const material = new THREE.MeshPhongMaterial({ 
+      color: 0x4f46e5,
+      emissive: 0x2563eb,
+      emissiveIntensity: 0.2,
+      shininess: 100
+    });
+    const sphere = new THREE.Mesh(geometry, material);
+    scene.add(sphere);
+    modelRef.current = sphere;
 
-        // Setup animations
-        if (gltf.animations.length > 0) {
-          const mixer = new THREE.AnimationMixer(model);
-          mixerRef.current = mixer;
-          const idleAction = mixer.clipAction(gltf.animations[0]);
-          idleAction.play();
-        }
-      },
-      undefined,
-      (error) => {
-        console.error('Error loading 3D model:', error);
-      }
-    );
-
-    // Animation loop
-    const clock = new THREE.Clock();
+    // Animation
     const animate = () => {
-      animationFrameRef.current = requestAnimationFrame(animate);
-
-      if (mixerRef.current) {
-        mixerRef.current.update(clock.getDelta());
-      }
-
       if (modelRef.current) {
-        // Floating animation
-        modelRef.current.position.y = -0.5 + Math.sin(clock.getElapsedTime() * 2) * 0.05;
-        
-        // Slow rotation
         modelRef.current.rotation.y += 0.01;
-
-        // Hover effect
-        if (isHoveredRef.current) {
-          modelRef.current.scale.x = THREE.MathUtils.lerp(modelRef.current.scale.x, 0.6, 0.1);
-          modelRef.current.scale.y = THREE.MathUtils.lerp(modelRef.current.scale.y, 0.6, 0.1);
-          modelRef.current.scale.z = THREE.MathUtils.lerp(modelRef.current.scale.z, 0.6, 0.1);
+        if (isHovered) {
+          modelRef.current.rotation.y += 0.02;
+          modelRef.current.scale.setScalar(1.1);
         } else {
-          modelRef.current.scale.x = THREE.MathUtils.lerp(modelRef.current.scale.x, 0.5, 0.1);
-          modelRef.current.scale.y = THREE.MathUtils.lerp(modelRef.current.scale.y, 0.5, 0.1);
-          modelRef.current.scale.z = THREE.MathUtils.lerp(modelRef.current.scale.z, 0.5, 0.1);
+          modelRef.current.scale.setScalar(1.0);
         }
       }
 
       renderer.render(scene, camera);
+      animationFrameRef.current = requestAnimationFrame(animate);
     };
+
     animate();
 
-    // Handle hover events
-    const handleMouseEnter = () => {
-      isHoveredRef.current = true;
-      if (containerRef.current) {
-        containerRef.current.style.cursor = 'pointer';
-      }
-    };
-
-    const handleMouseLeave = () => {
-      isHoveredRef.current = false;
-      if (containerRef.current) {
-        containerRef.current.style.cursor = 'default';
-      }
-    };
-
-    containerRef.current.addEventListener('mouseenter', handleMouseEnter);
-    containerRef.current.addEventListener('mouseleave', handleMouseLeave);
-
+    // Cleanup
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
-      if (containerRef.current) {
-        containerRef.current.removeEventListener('mouseenter', handleMouseEnter);
-        containerRef.current.removeEventListener('mouseleave', handleMouseLeave);
-        if (renderer.domElement) {
-          containerRef.current.removeChild(renderer.domElement);
-        }
+      if (containerRef.current?.contains(renderer.domElement)) {
+        containerRef.current.removeChild(renderer.domElement);
       }
+      geometry.dispose();
+      material.dispose();
+      renderer.dispose();
     };
-  }, [modelPath]);
+  }, [isHovered]);
 
   return (
     <div 
       ref={containerRef}
-      onClick={onClick}
-      className="w-[120px] h-[120px] rounded-full bg-gradient-to-r from-blue-500 to-blue-600 shadow-lg cursor-pointer overflow-hidden"
-      style={{
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
-      }}
+      className="fixed bottom-24 right-6 w-[120px] h-[120px] cursor-pointer z-50 transition-transform duration-300 hover:scale-110"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     />
   );
 };
